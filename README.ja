@@ -12,6 +12,10 @@ Kouhei Sutou <kou@cozmixng.org>
 
 GPL or BSD License
 
+== メーリングリスト
+
+((<COZMIXNG RWiki - 連絡先|URL:http://www.cozmixng.org/~rwiki/index.rb?cmd=view;name=%CF%A2%CD%ED%C0%E8>))を御覧下さい．
+
 == なにこれ？
 
 Schemeで実装された埋め込みScheme処理系です．フィルタプログラ
@@ -32,7 +36,7 @@ scheme|URL:http://homepage1.nifty.com/blankspace/scheme/embed.html>))
 
 == インストール
 
-  # gosh install.scm
+  # gosh install/install.scm
 
 == 構文
 
