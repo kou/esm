@@ -6,8 +6,14 @@ hoge
 <%%% %%%>
 <%= "<%%% %%%>" %>
 fufufu
+<% (if (> 1 2) (begin %>
+<%= 1 %><% ) (begin %>
+<%= 2 %>
+<% )) %>
 <% (if (> 1 2) %>
 (> 1 2) is true.
-<%  %>
+<%   %>
 (> 1 2) is not true.
 <% ) %>
+<%; hohohogee  
+hohoho%><% "out" %>
