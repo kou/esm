@@ -41,15 +41,6 @@
 (define-macro (do-backtrack backtrack get-string unput-string)
   `(,backtrack ,get-string ,unput-string))
 
-(define-macro (set-action! . actions)
-  `(set! action (lambda () ,@actions)))
-
-(define-macro (init-action)
-  '(define action #f))
-
-(define-macro (do-action)
-  '(action))
-
 ;; For esm-compile
 (define-macro (make-result)
   '(open-output-string))

@@ -24,6 +24,13 @@
                               (car args))))
         (else (error "unknown command: " command))))))
 
+
+(define-macro (set-action! . actions)
+  `(set! action (lambda () ,@actions)))
+
+(define-macro (do-action)
+  '(action))
+
 (define (make-lexer src-port)
 
   (let ((reader (make-reader src-port)))
@@ -138,7 +145,8 @@
                                  #f
                                  (string char)))))))
 
-    (init-action)
+    (define action #f)
+    
     (set-action! (text-part (make-token))) ; first action
     (lambda () (do-action)) ; return procedure which do next action
     ))

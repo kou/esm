@@ -41,7 +41,7 @@ Scheme処理系からはテキスト部分は一つの式とみなされます．
 
 実行するにはbin/esm.scmを使うといいでしょう．
 
-  % bin/esm.scm sample/if.esm
+  % bin/esm.scm sample/emb.esm
 
 このような結果を得ることでしょう．
 
