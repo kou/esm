@@ -1,6 +1,6 @@
 #!/usr/bin/env gosh
 
-(add-load-path ".")
+(use gauche.interactive)
 (use file.util)
 (use test.unit)
 
