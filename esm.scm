@@ -122,13 +122,6 @@
     (lambda () (next)) ; return procedure which do next action
     ))
 
-(define (test-lex src-port)
-  (let ((lexer (make-lexer src-port)))
-    (do ((token (lexer) (lexer)))
-        ((eof-object? token) (print "end!!!"))
-      (write token)
-      (newline))))
-      
 ; (define-syntax string-case
 ;   (syntax-rules (test else =>)
 ;     ((string-case '()))
@@ -150,7 +143,7 @@
             (else 
              (display "(display " _out)
              (write token _out)
-             (display ") " _out)
+             (display ")\n" _out)
              (text-part (lexer)))))
 
     (define (esm-part token)
@@ -170,7 +163,7 @@
             (else
              (display "(display " _out)
              (display token _out)
-             (display ") " _out)
+             (display ")\n" _out)
              (esm-part (lexer)))))
 
     (text-part (lexer))))
