@@ -2,6 +2,8 @@
 
 = README.ja
 
+$Id$
+
 == 作者
 
 Kouhei Sutou <kou@cozmixng.org>
@@ -19,8 +21,8 @@ Schemeで実装された埋め込みScheme処理系です．フィルタプログラ
 同様のものに
 ((<escm|URL:http://www.shiro.dreamhost.com/scheme/vault/escm.html>)) 
 ，((<embedded
-scheme|URL:http://homepage1.nifty.com/blankspace/scheme/embed.html>)) 
-があります．
+scheme|URL:http://homepage1.nifty.com/blankspace/scheme/embed.html>))
+，((<BRL|URL:http://brl.sourceforge.net/>))などがあります．
 
 == 入手方法
 
