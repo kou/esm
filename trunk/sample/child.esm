@@ -1,0 +1,3 @@
+child.esm
+<%= (get-param :arg "none") %>
+end child.esm

@@ -1,0 +1,7 @@
+<%= (header) %>
+<% (for-each (lambda (message) %>
+<p><%= (h message) %></p>
+<% ) (get-messages)) %>
+<%= (form) %>
+<%= (show-list n) %>
+<%= (footer) %>

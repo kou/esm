@@ -1,0 +1,7 @@
+<form method="post" action="index.cgi">
+<input type="hidden" name="action" value="submit">
+<p>name: <input name="name"></p>
+<p>title: <input name="title"></p>
+<p><textarea name="body"></textarea></p>
+<p><input type="submit" name="submit" value="write"></p>
+</form>

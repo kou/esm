@@ -1,0 +1,10 @@
+if2.esm
+<%
+  (use srfi-19)
+  (if (< (date-hour (current-date)) 12)
+      (begin
+%>
+<%= (date-hour (current-date)) %> a.m.
+<% ) (begin %>
+It is <%= (- 24 (date-hour (current-date))) %> more hour(s) in the afternoon.
+<% )) %>

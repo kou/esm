@@ -1,0 +1,5 @@
+<% (for-each (lambda (item) %>
+<h2>[<%= (h (item-number item)) %>]
+ <%= (h (item-title item)) %> by <%= (h (item-name item)) %></h2>
+<p><%= (h (item-body item)) %></p>
+<% ) (read-files n)) %>

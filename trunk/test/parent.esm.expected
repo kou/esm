@@ -1,0 +1,6 @@
+parent.esm
+child.esm
+1
+end child.esm
+
+end parent.esm
