@@ -101,7 +101,7 @@
   (define (esm-part token)
     (let ((char (read-char src-port)))
       (case char
-        ((#\<) (start-esm-part (make-previous-value 
+        ((#\<) (start-esm-part (make-previous-value
                                 (error "bad esm: esm part is nested."))
                                (make-backtrack token esm-part)))
         ((#\%) (end-esm-part (make-previous-value token)
@@ -154,31 +154,25 @@
   (lambda () (do-action)) ; return procedure which do next action
   )
 
-; (define-syntax string-case
-;   (syntax-rules (test else =>)
-;     ((string-case '()))
-;     ((string-case target ((expr ...) action ...) ...)
-;      (cond ((or (string=? target expr) ...)
-;             action ...)
-;            ...))
-;     ))
-(use srfi-1) ;; for extended member
-
-(define-syntax string-case-sub
-  (syntax-rules (else)
-    ((_ obj)  #f)
-    ((_ obj (else expr ...)) (begin expr ...))
-    ((_ obj ((str ...) expr ...) clause ...)
-     (if (member obj '(str ...) string=?)
-       (begin expr ...)
-       (string-case obj clause ...)))
-    ((_ obj other . more) (syntax-error "bad clause in string-case" other))))
+(define (include? key sequence predicate)
+  (and (not (null? sequence))
+       (if (predicate key (car sequence))
+           #t
+           (include? key (cdr sequence) predicate))))
 
 (define-syntax string-case
   (syntax-rules (else)
-    ((_ obj clause ...)
-     (let ((tmp obj))
-       (string-case-sub tmp clause ...)))))
+    ((_ key) #f)
+    ((_ key (else expr ...)) (begin expr ...))
+    ((_ key ((str ...) expr ...))
+     (if (include? key '(str ...) string=?)
+         (begin expr ...)))
+    ((_ key ((str ...) expr ...) clause ...)
+     (if (include? key '(str ...) string=?)
+         (begin expr ...)
+         (string-case key clause ...)))
+    ((_ other . more)
+     (syntax-error "bad clause in string-case" other))))
 
 (define (esm-compile src-port)
   (let ((lexer (make-lexer src-port))
@@ -191,63 +185,68 @@
                            1))))
 
     (define (text-part token first?)
-      (cond ((eof-object? token)
-             (if (not first?) (display ") " result))
-             (display "(print (get-output-string _out)))" result)
-             (get-output-string result))
-            ((string=? token "<%")
+      (if (eof-object? token)
+          (begin
+            (if (not first?) (display ") " result))
+            (display "(print (get-output-string _out)))" result)
+            (get-output-string result))
+          (string-case token
+            (("<%")
              (if (not first?) (display ") " result))
              (esm-part (lexer)))
-            ((string=? token "<%=")
+            (("<%=")
              (if (not first?) (display ") " result))
              (display-esm-part (lexer)))
-            ((string=? token "<%;")
+            (("<%;")
              (if (not first?) (display ") " result))
              (comment-part (lexer)))
-            ((string=? token "%>") (error "bad esm"))
+            (("%>") (error "bad esm"))
             (else
              (if first? (display " (begin " result))
              (display " (display " result)
              (write token result)
              (display " _out) " result)
              (if (line? token) (display #\newline result))
-             (text-part (lexer) #f))))
+             (text-part (lexer) #f)))))
 
-    (define (esm-part token)
-      (cond ((eof-object? token) (error "unexcepted end"))
-            ((string=? token "<%") (error "nested esm part"))
-            ((string=? token "<%=") (error "nested esm part(display)"))
-            ((string=? token "<%;") (error "nested esm part(comment)"))
-            ((string=? token "%>") (text-part (lexer) #t))
-            (else
-             (display token result)
-             (esm-part (lexer)))))
+      (define (esm-part token)
+        (if (eof-object? token)
+            (error "unexcepted end")
+            (string-case token
+              (("<%") (error "nested esm part"))
+              (("<%=") (error "nested esm part(display)"))
+              (("<%;") (error "nested esm part(comment)"))
+              (("%>") (text-part (lexer) #t))
+              (else
+               (display token result)
+               (esm-part (lexer))))))
 
-    (define (comment-part token)
-      (cond ((eof-object? token) (error "unexcepted end"))
-;             ((string=? token "<%") (error "nested esm part"))
-;             ((string=? token "<%=") (error "nested esm part(display)"))
-;             ((string=? token "<%;") (error "nested esm part(comment)"))
-            ((string=? token "%>") (text-part (lexer) #t))
-            (else
-             (display ";;" result)
-             (display token result)
-             (if (not (line? token))
-                 (display #\newline result)) ;; changed line number. umm.
-             (comment-part (lexer)))))
+      (define (comment-part token)
+        (if (eof-object? token)
+            (error "unexcepted end")
+            (string-case token
+              ;; (("<%") (error "nested esm part"))
+              ;; (("<%=") (error "nested esm part(display)"))
+              ;; (("<%;") (error "nested esm part(comment)"))
+              (("%>") (text-part (lexer) #t))
+              (else
+               (if (line? token) (display #\newline result))
+               (comment-part (lexer))))))
 
-    (define (display-esm-part token)
-      (cond ((eof-object? token) (error "unexcepted end"))
-            ((string=? token "<%") (error "nested esm part"))
-            ((string=? token "<%=") (error "nested esm part(display)"))
-            ((string=? token "<%;") (error "nested esm part(comment)"))
-            ((string=? token "%>") (text-part (lexer) #t))
-            (else
-             (display " (display " result)
-             (display token result)
-             (display " _out) " result)
-             (if (line? token) (display #\newline result))
-             (esm-part (lexer)))))
+      (define (display-esm-part token)
+        (if (eof-object? token)
+            (error "unexcepted end")
+            (string-case token
+              (("<%") (error "nested esm part"))
+              (("<%=") (error "nested esm part(display)"))
+              (("<%;") (error "nested esm part(comment)"))
+              (("%>") (text-part (lexer) #t))
+              (else
+               (display " (display " result)
+               (display token result)
+               (display " _out) " result)
+               (if (line? token) (display #\newline result))
+               (esm-part (lexer))))))
 
-    (display "(let ((_out (open-output-string))) " result)
-    (text-part (lexer) #t)))
+      (display "(let ((_out (open-output-string))) " result)
+      (text-part (lexer) #t)))
