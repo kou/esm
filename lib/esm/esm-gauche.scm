@@ -57,12 +57,28 @@
 (define-macro (result->string result)
   `(get-output-string ,result))
 
+(define-macro (esm-output-start result)
+  `(write-to-result " (display " ,result))
+
+(define-macro (esm-output-end output result)
+  `(begin
+     (write-to-result ,output ,result)
+     (write-to-result ")" ,result)))
+
 (define (esm-output target output result target-output-proc)
-  (display " (display " result)
+  (esm-output-start result)
+  (esm-output-contents target result target-output-proc)
+  (esm-output-end output result))
+
+(define (esm-output-contents target result target-output-proc)
   (target-output-proc target result)
-  (display " " result)
-  (display output result)
-  (display ") " result))
+  (write-to-result " " result))
+
+(define (esm-output-text-contents target result)
+  (esm-output-contents target result write))
+
+(define (esm-output-scheme-contents target result)
+  (esm-output-contents target result display))
 
 (define (esm-output-text target output result)
   (esm-output target output result write))
@@ -72,4 +88,3 @@
 
 (define-macro (esm-get-output output)
   `(string-append "(get-output-string " ,output ")"))
-

@@ -240,7 +240,7 @@
              (esm-part (lexer)))
             ((*start-display-esm-part*)
              (if (not first?) (write-to-result ") " result))
-             (display-esm-part (lexer)))
+             (display-esm-part (lexer) #t))
             ((*start-comment-part*)
              (if (not first?) (write-to-result ") " result))
              (comment-part (lexer)))
@@ -286,9 +286,9 @@
                      (write-to-result #\newline result)))
                (comment-part (lexer))))))
 
-      (define (display-esm-part token)
+      (define (display-esm-part token first?)
         (if (eof-object? token)
-            (error "unexcepted end")
+            (report-error "unexcepted end")
             (token-case token
               ((*start-esm-part*)
                (report-error "esm part found in display esm part."))
@@ -297,14 +297,17 @@
               ((*start-comment-part*)
                (report-error "comment part found in esm display part."))
               ((*end-esm-part*)
+               (if (not first?)
+                   (esm-output-end "_out" result))
                (text-part (lexer) #t))
               (else
-               (esm-output-scheme token "_out" result)
+               (if first?
+                   (esm-output-start result))
+               (esm-output-scheme-contents token result)
                (if (line? token)
-                   (begin
-                     (found-line)
-                     (write-to-result #\newline result)))
-               (esm-part (lexer))))))
+                   (found-line))
+               (display-esm-part (lexer)
+                                 #f)))))
 
       (write-to-result "(let ((_out " result)
       (write-to-result (esm-make-output) result)

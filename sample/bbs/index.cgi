@@ -1,21 +1,23 @@
 #!/usr/local/bin/gosh
 ;; -*- scheme -*-
 
-(use esm.gauche)
-(use www.cgi)
-
-(define-esm* header "header.esm")
-(define-esm* footer "footer.esm")
-(define-esm* top "top.esm")
-(define-esm* edit "edit.esm")
+(add-load-path "/home/kou/work/gauche/esm/lib/")
 
 (define (main args)
   (cgi-main
    (lambda (param)
-     (let (action (cgi-get-parameter "action" param))
-       (cond ((equal? action "edit")
-              (edit))
-             ((equal? action "submit")
-              (top))
-             (else
-              (top)))))))
+     (require "bbs")
+     `(,(cgi-header)
+       ,(let ((action (cgi-get-parameter "action" param)))
+          (cond ((equal? action "submit")
+                 (if (submit
+                      (cgi-get-parameter "name" param)
+                      (cgi-get-parameter "title" param)
+                      (cgi-get-parameter "body" param))
+                     (add-message "submit success")
+                     (add-message "submit failed"))))
+          (body (cgi-get-parameter "max" param :default 10)))))
+   :on-error (lambda (e)
+               `(,(cgi-header)
+                 ,(show-error e)))))
+               
