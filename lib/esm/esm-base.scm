@@ -1,5 +1,3 @@
-(define *esm-default-environment* (scheme-report-environment 5))
-
 (define (esm-eval compiled-esm . env)
   (let ((esm (read (if (string? compiled-esm)
                        (open-input-string compiled-esm)
@@ -19,44 +17,6 @@
      (display (apply esm-eval
                      ,(esm-compile src)
                      ,env))))
-
-(define-macro (make-token)
-  '(open-output-string))
-
-(define-macro (write-to-token value token)
-  `(display ,value ,token))
-
-(define-macro (token->string token)
-  `(get-output-string ,token))
-
-(define-macro (return-token token)
-  `(let ((value (token->string ,token)))
-     (if (string=? value "")
-         (do-action)
-         value)))
-
-(define-macro (make-previous-value token)
-  `(lambda () (return-token ,token)))
-
-(define-macro (get-previous-value previous-value)
-  `(,previous-value))
-
-(define-macro (make-backtrack token next-action)
-  `(lambda (get-string)
-     (write-to-token get-string ,token)
-     (,next-action ,token)))
-
-(define-macro (do-backtrack backtrack get-string)
-  `(,backtrack get-string))
-
-(define-macro (set-action! . actions)
-  `(set! action (lambda () ,@actions)))
-
-(define-macro (init-action)
-  '(define action #f))
-
-(define-macro (do-action)
-  '(action))
 
 (define (make-lexer src-port)
   (define (text-part token)
@@ -120,7 +80,7 @@
          (write-to-token char token)
          (return-token token))
         (else (if (eof-object? char)
-                  (error "bad esm" (get-output-string token))
+                  (error "bad esm" (token->string token))
                   (begin
                     (write-to-token char token)
                     (esm-part token)))))))
@@ -135,7 +95,7 @@
          (write-to-token char token)
          (return-token token))
         (else (if (eof-object? char)
-                  (error "bad esm" (get-output-string token))
+                  (error "bad esm" (token->string token))
                   (begin
                     (write-to-token char token)
                     (comment-part token)))))))
@@ -188,7 +148,7 @@
                        (open-input-string src)
                        src))
          (lexer (make-lexer src-port))
-         (result (open-output-string)))
+         (result (make-result)))
 
     (define (line? string)
       (eqv? #\newline
@@ -199,26 +159,25 @@
     (define (text-part token first?)
       (if (eof-object? token)
           (begin
-            (if (not first?) (display ") " result))
-            (display "(print (get-output-string _out)))" result)
-            (get-output-string result))
+            (if (not first?) (write-to-result ") " result))
+            (write-to-result (esm-get-output "_out") result)
+            (write-to-result ")" result)
+            (result->string result))
           (string-case token
             (("<%")
-             (if (not first?) (display ") " result))
+             (if (not first?) (write-to-result ") " result))
              (esm-part (lexer)))
             (("<%=")
-             (if (not first?) (display ") " result))
+             (if (not first?) (write-to-result ") " result))
              (display-esm-part (lexer)))
             (("<%;")
-             (if (not first?) (display ") " result))
+             (if (not first?) (write-to-result ") " result))
              (comment-part (lexer)))
             (("%>") (error "bad esm"))
             (else
-             (if first? (display " (begin " result))
-             (display " (display " result)
-             (write token result)
-             (display " _out) " result)
-             (if (line? token) (display #\newline result))
+             (if first? (write-to-result " (begin " result))
+             (esm-output-text token "_out" result)
+             (if (line? token) (write-to-result #\newline result))
              (text-part (lexer) #f)))))
 
       (define (esm-part token)
@@ -230,7 +189,7 @@
               (("<%;") (error "nested esm part(comment)"))
               (("%>") (text-part (lexer) #t))
               (else
-               (display token result)
+               (write-to-result token result)
                (esm-part (lexer))))))
 
       (define (comment-part token)
@@ -242,7 +201,7 @@
               ;; (("<%;") (error "nested esm part(comment)"))
               (("%>") (text-part (lexer) #t))
               (else
-               (if (line? token) (display #\newline result))
+               (if (line? token) (write-to-result #\newline result))
                (comment-part (lexer))))))
 
       (define (display-esm-part token)
@@ -254,11 +213,11 @@
               (("<%;") (error "nested esm part(comment)"))
               (("%>") (text-part (lexer) #t))
               (else
-               (display " (display " result)
-               (display token result)
-               (display " _out) " result)
-               (if (line? token) (display #\newline result))
+               (esm-output-scheme token "_out" result)
+               (if (line? token) (write-to-result #\newline result))
                (esm-part (lexer))))))
 
-      (display "(let ((_out (open-output-string))) " result)
+      (write-to-result "(let ((_out " result)
+      (write-to-result (esm-make-output) result)
+      (write-to-result ")) " result)
       (text-part (lexer) #t)))

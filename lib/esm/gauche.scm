@@ -1,4 +1,5 @@
 (define-module esm.gauche
+  (require "esm/gauche-macro")
   (require "esm/esm-base")
   (export <esm> result run src-of
           esm-compile esm-result esm-run define-esm))

@@ -4,6 +4,5 @@
 
 (define (main args)
   (run (make <esm>
-         :src (standard-input-port))
-       (interaction-environment))
+         :src (standard-input-port)))
   0)
