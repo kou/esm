@@ -1,0 +1,30 @@
+# -*- rd -*-
+
+= esm::README.ja
+
+== 作者
+
+Kouhei Sutou <kou@cozmixng.org>
+
+== ライセンス
+
+GPL or BSD License
+
+== なにこれ？
+
+Schemeで実装された埋め込みScheme処理系です．
+
+同様のものに((<escm|URL:http://www.shiro.dreamhost.com/scheme/vault/escm.html>))があります．
+
+== 入手方法
+
+((<URL:http://www.cozmixng.org/~kou/download/esm.tar.gz>))
+
+  % svn co http://www.cozmixng.org/repos/gauche/esm/trunk esm
+
+== インストール
+
+  # gosh install.scm
+
+== 構文
+
