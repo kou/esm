@@ -1,6 +1,6 @@
 # -*- rd -*-
 
-= esm::README.ja
+= README.ja
 
 == 作者
 
@@ -47,3 +47,9 @@ scheme|URL:http://homepage1.nifty.com/blankspace/scheme/embed.html>))
   * その他
     
     テキスト．そのまま出力される．
+
+== Gaucheで使う
+
+  (use esm.gauche)
+
+  (run (make <esm> :src esm-source-by-string-or-port))

@@ -1,11 +1,14 @@
 (define-module esm.gauche
-  (require "esm/gauche-macro")
+  (require "esm/esm-gauche")
   (require "esm/esm-base")
-  (export <esm> result run src-of
-          esm-compile esm-result esm-run define-esm))
+  (export <esm> result run src-of define-esm*
+          esm-compile esm-result esm-run esm-eval define-esm))
 (select-module esm.gauche)
 
 (define *esm-default-environment* (interaction-environment))
+
+(define-macro (define-esm* name filename . args)
+  `(define-esm ,name ,filename (current-module) ,@args))
 
 (define-class <esm> ()
   ((src :accessor src-of :init-keyword :src))

@@ -31,7 +31,7 @@
      (,next-action ,token)))
 
 (define-macro (do-backtrack backtrack get-string)
-  `(,backtrack get-string))
+  `(,backtrack ,get-string))
 
 (define-macro (set-action! . actions)
   `(set! action (lambda () ,@actions)))

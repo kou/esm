@@ -17,3 +17,4 @@ fufufu
 <% ) %>
 <%; hohohogee  
 hohoho%><% "out" %>
+<%= (current-module) %>

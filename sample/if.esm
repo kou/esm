@@ -1,0 +1,9 @@
+if.esm
+<%
+  (use srfi-19)
+  (if (< (date-hour (current-date)) 12)
+%>
+morning
+<%; dummy %>
+afternoon
+<% ) %>

@@ -1,0 +1,3 @@
+parent.esm
+<%= (child 1) %>
+end parent.esm

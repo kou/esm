@@ -1,10 +1,13 @@
 (define (esm-eval compiled-esm . env)
-  (let ((esm (read (if (string? compiled-esm)
-                       (open-input-string compiled-esm)
-                       compiled-esm))))
+  (let ((esm (esm-read compiled-esm)))
     (eval esm (if (null? env)
                   *esm-default-environment*
                   (car env)))))
+
+(define (esm-read compiled-esm)
+  (read (if (string? compiled-esm)
+            (open-input-string compiled-esm)
+            compiled-esm)))
 
 (define (esm-result src . env)
   (apply esm-eval (esm-compile src) env))
@@ -12,11 +15,11 @@
 (define (esm-run src . env)
   (display (apply esm-result src env)))
 
-(define-macro (define-esm name src env . args)
-  `(define (,name ,@args)
-     (display (apply esm-eval
-                     ,(esm-compile src)
-                     ,env))))
+(define-macro (define-esm name filename env . args)
+  `(eval (define (,name ,@args)
+           ,(esm-read
+             (esm-compile (open-input-file filename))))
+         ,env))
 
 (define (make-lexer src-port)
   (define (text-part token)
