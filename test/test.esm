@@ -31,5 +31,5 @@ fufufu
 <% ) %>
 <%; hohohogee  
 hohoho%><% "out" %>
-<%= (current-module) %>
+<%= (module-name (current-module)) %>
 %%>

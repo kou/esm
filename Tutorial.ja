@@ -223,20 +223,31 @@ esmは以下の手続きを用意しています．
 
     srcをコンパイルする．srcは文字列か入力ポート．
 
---- esm-eval(compiled-esm . env)
-
-    コンパイルされたesmコードcompiled-esmを環境をenvとして評
-    価する．envが省略された場合は*esm-default-environment* 
-    が使用される．
-
 --- esm-result(src . env)
 
     srcをコンパイルして環境envで評価した結果の文字列を返す．
+    envが省略された場合は*esm-default-environment* 
+    が使用される．
 
 --- esm-run(src . env)
 
-    srcをコンパイルして環境envで評価した結果の文字列を
-    displayで出力する．
+    (apply esm-result src env)で得られた文字列をdisplayで出
+    力する．envが省略された場合は*esm-default-environment*
+    が使用される．
+
+esmは以下の構文を用意しています．
+
+--- esm-result*(src)
+    
+    srcをコンパイルして評価した結果の文字列を返す．
+    esm-resultと違ってsrcのコンパイルは実行時ではなく，プロ
+    グラムのコンパイル時に行われる．
+
+--- esm-run*(src)
+    
+    srcをコンパイルして評価した結果の文字列をdisplayで出力する．
+    esm-runと違ってsrcのコンパイルは実行時ではなく，プログラ
+    ムのコンパイル時に行われる．
 
 --- define-esm(name filename env . args)
 
@@ -244,10 +255,5 @@ esmは以下の手続きを用意しています．
     した結果をdisplayで出力するargsという引数を持つnameとい
     う名前の手続きを定義する．
 
-Gauche用のesmは他に<esm>クラス，resultメソッド，runメソッド，
-define-esm*構文を提供します．resultとesm-result，runと
-esm-runの違いは第一引数がsrcか<esm>クラスかだけです．
-define-esm*構文はenvに(current-module)が指定されたdefine-esm
-です．
-
-
+Gauche用のesmはdefine-esm*構文を提供します．define-esm*構文
+はenvに(current-module)が指定されたdefine-esm です．

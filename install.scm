@@ -25,9 +25,8 @@
                   #t
                   :lister
                   (lambda (dir knil)
-                    (let ((target (sys-basename
-                                   (string-scan dir from 'after))))
-                      (if (member target
+                    (let ((target (string-scan dir from 'after)))
+                      (if (member (sys-basename target)
                                   *ignore-directories*
                                   string=?)
                           '()

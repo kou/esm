@@ -7,29 +7,6 @@
 (define *start-comment-part* (string->symbol "<%;"))
 (define *end-esm-part* '%>)
 
-(define (esm-eval compiled-esm . env)
-  (let ((esm (esm-read compiled-esm)))
-    (eval esm (if (null? env)
-                  *esm-default-environment*
-                  (car env)))))
-
-(define (esm-read compiled-esm)
-  (read (if (string? compiled-esm)
-            (open-input-string compiled-esm)
-            compiled-esm)))
-
-(define (esm-result src . env)
-  (apply esm-eval (esm-compile src) env))
-
-(define (esm-run src . env)
-  (display (apply esm-result src env)))
-
-(define-macro (define-esm name filename env . args)
-  `(eval (define (,name ,@args)
-           ,(esm-read
-             (esm-compile (open-input-file filename))))
-         ,env))
-
 (define (make-reader src-port)
   (let ((buffer ""))
     (lambda (command . args)
@@ -313,3 +290,22 @@
       (write-to-result (esm-make-output) result)
       (write-to-result ")) " result)
       (text-part (lexer) #t)))
+
+(define (esm-result src . env)
+  (eval `(esm-result* ,src)
+        (if (null? env)
+            *esm-default-environment*
+            (car env))))
+
+(define-macro (esm-result* src)
+  (read-from-string (esm-compile src)))
+
+(define (esm-run src . env)
+  (display (apply esm-result src env)))
+
+(define-macro (esm-run* src)
+  `(display (esm-result* ,src)))
+
+(define-macro (define-esm name filename env . args)
+  `(define (,name ,@args)
+     (esm-result ,(open-input-file filename))))

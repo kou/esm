@@ -12,7 +12,9 @@ GPL or BSD License
 
 == なにこれ？
 
-Schemeで実装された埋め込みScheme処理系です．
+Schemeで実装された埋め込みScheme処理系です．フィルタプログラ
+ムとしてではなくSchemeプログラム中でライブラリとして使用され
+ることを想定しています．
 
 同様のものに
 ((<escm|URL:http://www.shiro.dreamhost.com/scheme/vault/escm.html>)) 
