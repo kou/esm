@@ -1,7 +1,10 @@
 (define-module esm.gauche
   (require "esm/esm-base")
-  (export <esm> esm-compile esm-result esm-run))
+  (export <esm> result run src-of
+          esm-compile esm-result esm-run define-esm))
 (select-module esm.gauche)
+
+(define *esm-default-environment* (interaction-environment))
 
 (define-class <esm> ()
   ((src :accessor src-of :init-keyword :src))
@@ -12,14 +15,10 @@
   (slot-set! self 'src
              (esm-compile (src-of self))))
 
-(define-method result ((self <esm>) args)
-  (next-method)
-  (eval (src-of self)
-        (get-keyword :env args
-                     (interaction-environment))))
+(define-method result ((self <esm>) . env)
+  (apply esm-eval (src-of self) env))
 
-(define-method run ((self <esm>) args)
-  (next-method)
-  (display (apply run self args)))
+(define-method run ((self <esm>) . env)
+  (display (apply result self env)))
 
 (provide "esm/gauche")

@@ -1,15 +1,24 @@
+(define *esm-default-environment* (scheme-report-environment 5))
+
+(define (esm-eval compiled-esm . env)
+  (let ((esm (read (if (string? compiled-esm)
+                       (open-input-string compiled-esm)
+                       compiled-esm))))
+    (eval esm (if (null? env)
+                  *esm-default-environment*
+                  (car env)))))
+
 (define (esm-result src . env)
-  (let ((result (esm-compile
-                 (if (string? src)
-                     (open-input-string src)
-                     src))))
-    (eval (read (open-input-string result))
-          (if (null? env)
-              (scheme-report-environment 5)
-              (car env)))))
+  (apply esm-eval (esm-compile src) env))
 
 (define (esm-run src . env)
   (display (apply esm-result src env)))
+
+(define-macro (define-esm name src env . args)
+  `(define (,name ,@args)
+     (display (apply esm-eval
+                     ,(esm-compile src)
+                     ,env))))
 
 (define-macro (make-token)
   '(open-output-string))
@@ -164,19 +173,22 @@
   (syntax-rules (else)
     ((_ key) #f)
     ((_ key (else expr ...)) (begin expr ...))
-    ((_ key ((str ...) expr ...))
-     (if (include? key '(str ...) string=?)
-         (begin expr ...)))
+    ((_ key ((str ...)) clause ...)
+     (syntax-error "expressions are not found in string-case" ((str ...))))
     ((_ key ((str ...) expr ...) clause ...)
-     (if (include? key '(str ...) string=?)
-         (begin expr ...)
-         (string-case key clause ...)))
+     (let ((evaled-key key))
+       (if (include? evaled-key '(str ...) string=?)
+           (begin expr ...)
+           (string-case evaled-key clause ...))))
     ((_ other . more)
      (syntax-error "bad clause in string-case" other))))
 
-(define (esm-compile src-port)
-  (let ((lexer (make-lexer src-port))
-        (result (open-output-string)))
+(define (esm-compile src)
+  (let* ((src-port (if (string? src)
+                       (open-input-string src)
+                       src))
+         (lexer (make-lexer src-port))
+         (result (open-output-string)))
 
     (define (line? string)
       (eqv? #\newline
