@@ -25,8 +25,16 @@
                       (esm-result* "before after<%; ))
                                                     )) %>"))))
   ("test defined esm"
-   (define-esm* test-esm "test/test.esm")
+   (define-esm test-esm "test/test.esm")
    (assert-equal (string-incomplete->complete
-                  (read-block 10000 (open-input-file "test/test.esm.expected")))
-                 (test-esm))
-   ))
+                  (read-block 1000000
+                              (open-input-file "test/test.esm.expected")))
+                 (test-esm)))
+  ("test nested esm"
+   (define-esm parent "test/parent.esm")
+   (define-esm child "test/child.esm")
+   (assert-equal (string-incomplete->complete
+                  (read-block 1000000
+                              (open-input-file "test/parent.esm.expected")))
+                 (parent)))
+  )

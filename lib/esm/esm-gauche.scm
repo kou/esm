@@ -1,5 +1,8 @@
 (select-module esm.gauche)
 
+;; For esm-result
+(define *esm-default-environment* (interaction-environment))
+
 ;; For make-lexer
 (define-macro (esm-make-output)
   "(open-output-string)")

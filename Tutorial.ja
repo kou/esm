@@ -154,13 +154,13 @@ define-esmを使うとesmで処理したテキストを返す手続きを定義す
 === 1つめのesmコード
 
   child.esm
-  <%= arg %>
+  <%= (get-param :arg) %>
   end child.esm
 
 === 2つめのesmコード
 
   parent.esm
-  <%= (child 1) %>
+  <%= (child :arg 1) %>
   end parent.esm
   
 === Schemeコード
@@ -170,8 +170,8 @@ define-esmを使うとesmで処理したテキストを返す手続きを定義す
 
   (use esm.gauche)
 
-  (define-esm parent "parent.esm" (current-module))
-  (define-esm child "child.esm" (current-module) arg)
+  (define-esm parent "parent.esm")
+  (define-esm child "child.esm")
 
   (define (main args)
     (display (parent))
@@ -193,23 +193,13 @@ parent.esmの中でchild.esmの内容をesmで変換したテキストを出力
 
 parent.esmの中のchild.esmの呼出し
 
-  <%= (child 1) %>
+  <%= (child :arg 1) %>
 
 に注目して下さい．esmの出力テキストを返す手続きを定義するこ
 とにより引数でesmの出力テキストに影響を与えることが出来ます．
 
 手続き化することによりesmの出力テキストを部品として使えるよ
 うになります．
-
-Gauche用esmではdefine-esm*構文が用意されており
-
-  (define-esm proc-name filename (current-module) arg ...)
-
-と
-
-  (define-esm* proc-name filename arg ...)
-
-は等価です．
 
 == 例4: CGI
 
@@ -249,11 +239,8 @@ esmは以下の構文を用意しています．
     esm-runと違ってsrcのコンパイルは実行時ではなく，プログラ
     ムのコンパイル時に行われる．
 
---- define-esm(name filename env . args)
+--- define-esm(name filename)
 
-    ファイル名filenameのesmコードをコンパイルし環境envで評価
-    した結果をdisplayで出力するargsという引数を持つnameとい
-    う名前の手続きを定義する．
+    ファイル名filenameのesmコードをコンパイルし評価した結果
+    を返すnameという名前の手続きを定義する．
 
-Gauche用のesmはdefine-esm*構文を提供します．define-esm*構文
-はenvに(current-module)が指定されたdefine-esm です．

@@ -306,6 +306,9 @@
 (define-macro (esm-run* src)
   `(display (esm-result* ,src)))
 
-(define-macro (define-esm name filename env . args)
-  `(define (,name ,@args)
-     (esm-result ,(open-input-file filename))))
+(define-macro (define-esm name filename)
+  (let ((args (gensym)))
+    `(define (,name . ,args)
+       (define (get-param keyword . fall-back)
+         (apply get-keyword keyword ,args fall-back))
+       (esm-result* ,(open-input-file filename)))))
