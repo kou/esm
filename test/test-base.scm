@@ -25,14 +25,21 @@
                       (esm-result* "before after<%; ))
                                                     )) %>"))))
   ("test defined esm"
-   (define-esm test-esm "test/test.esm")
+   ;; (define-esm test-esm "test/test.esm")
+   ;; bug for gauche 0.8
+   (eval '(define-esm test-esm "test/test.esm") (current-module))
    (assert-equal (string-incomplete->complete
                   (read-block 1000000
                               (open-input-file "test/test.esm.expected")))
                  (test-esm)))
   ("test nested esm"
-   (define-esm parent "test/parent.esm")
-   (define-esm child "test/child.esm")
+   ;; (define-esm parent "test/parent.esm")
+   ;; (define-esm child "test/child.esm")
+   ;; bug for gauche 0.8
+   (eval '(begin
+            (define-esm parent "test/parent.esm")
+            (define-esm child "test/child.esm"))
+         (current-module))
    (assert-equal (string-incomplete->complete
                   (read-block 1000000
                               (open-input-file "test/parent.esm.expected")))
