@@ -50,6 +50,8 @@ scheme|URL:http://homepage1.nifty.com/blankspace/scheme/embed.html>))
 
 == Gaucheで使う
 
+とりあえず
+
   (use esm.gauche)
 
-  (run (make <esm> :src esm-source-by-string-or-port))
+して下さい．

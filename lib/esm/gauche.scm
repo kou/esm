@@ -2,7 +2,8 @@
   (require "esm/esm-gauche")
   (require "esm/esm-base")
   (export <esm> result run src-of define-esm*
-          esm-compile esm-result esm-run esm-eval define-esm))
+          esm-compile esm-result esm-run esm-eval define-esm
+          *esm-version*))
 (select-module esm.gauche)
 
 (define *esm-default-environment* (interaction-environment))

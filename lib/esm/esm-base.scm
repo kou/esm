@@ -1,3 +1,5 @@
+(define *esm-version* "0.0.1")
+
 (define (esm-eval compiled-esm . env)
   (let ((esm (esm-read compiled-esm)))
     (eval esm (if (null? env)
