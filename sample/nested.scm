@@ -2,8 +2,9 @@
 
 (use esm.gauche)
 
+(define-esm parent "parent.esm" (current-module))
+(define-esm child "child.esm" (current-module) arg)
+
 (define (main args)
-  (define-esm parent "parent.esm" (current-module))
-  (define-esm child "child.esm" (current-module) arg)
   (display (parent))
   0)

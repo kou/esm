@@ -26,12 +26,17 @@
   `(,previous-value))
 
 (define-macro (make-backtrack token next-action)
-  `(lambda (get-string)
-     (write-to-token get-string ,token)
+  `(lambda (get-string unput-string)
+     (if (and get-string
+              (not (string=? get-string "")))
+         (write-to-token get-string ,token))
+     (if (and unput-string
+              (not (string=? unput-string "")))
+         (reader 'unput unput-string))
      (,next-action ,token)))
 
-(define-macro (do-backtrack backtrack get-string)
-  `(,backtrack ,get-string))
+(define-macro (do-backtrack backtrack get-string unput-string)
+  `(,backtrack ,get-string ,unput-string))
 
 (define-macro (set-action! . actions)
   `(set! action (lambda () ,@actions)))

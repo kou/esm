@@ -1,4 +1,11 @@
-(define *esm-version* "0.0.1")
+(define *esm-version* "0.0.2")
+
+(define *esm-debug-mode* #f)
+
+(define *start-esm-part* '<%)
+(define *start-display-esm-part* '<%=)
+(define *start-comment-part* (string->symbol "<%;"))
+(define *end-esm-part* '%>)
 
 (define (esm-eval compiled-esm . env)
   (let ((esm (esm-read compiled-esm)))
@@ -23,110 +30,141 @@
              (esm-compile (open-input-file filename))))
          ,env))
 
+(define (make-reader src-port)
+  (let ((buffer ""))
+    (lambda (command . args)
+      (case command
+        ((next)
+         (if (string=? buffer "")
+             (read-char src-port)
+             (let ((char (string-ref buffer 0)))
+               (set! buffer
+                     (substring buffer 1 (string-length buffer)))
+               char)))
+        ((unput)
+         (set! buffer
+               (string-append buffer
+                              (car args))))
+        (else (error "unknown command: " command))))))
+
 (define (make-lexer src-port)
-  (define (text-part token)
-    (let ((char (read-char src-port)))
-      (case char
-        ((#\<) (start-esm-part (make-previous-value token)
+
+  (let ((reader (make-reader src-port)))
+
+    (define (text-part token)
+      (let ((char (reader 'next)))
+        (case char
+          ((#\<) (start-esm-part (make-previous-value token)
+                                 (make-backtrack token text-part)))
+          ((#\%) (end-esm-part (make-previous-value token)
                                (make-backtrack token text-part)))
-        ((#\%) (end-esm-part (make-previous-value token)
-                             (make-backtrack token text-part)))
-        ((#\newline)
-         (set-action! (text-part (make-token)))
-         (write-to-token char token)
-         (return-token token))
-        (else (cond ((eof-object? char)
-                     (set-action! char)
-                     (return-token token))
-                    (else
-                     (write-to-token char token)
-                     (text-part token)))))))
+          ((#\newline)
+           (set-action! (text-part (make-token)))
+           (write-to-token char token)
+           (return-token token))
+          (else (cond ((eof-object? char)
+                       (set-action! char)
+                       (return-token token))
+                      (else
+                       (write-to-token char token)
+                       (text-part token)))))))
 
-  (define (start-esm-part previous-value backtrack)
-    (let ((char (read-char src-port)))
-      (case char
-        ((#\%) (let ((next-char (read-char src-port)))
-                 (case next-char
-                   ((#\%) (backtrack "<%"))
-                   ((#\=)
-                    (set-action!
-                     (set-action! (esm-part (make-token)))
-                     "<%=")
-                    (get-previous-value previous-value))
-                   ((#\;)
-                    (set-action!
-                     (set-action! (comment-part (make-token)))
-                     "<%;")
-                    (get-previous-value previous-value))
-                   (else
-                    (set-action!
-                     (set-action!
-                      (let ((token (make-token)))
-                        (if (not (eof-object? next-char))
-                            (write-to-token next-char token))
-                        (esm-part token)))
-                     "<%")
-                    (get-previous-value previous-value)))))
-        (else (do-backtrack backtrack
-                            (if (eof-object? char)
-                                "<"
-                                (string-append "<" (string char))))))))
+    (define (start-esm-part previous-value backtrack)
+      (let ((char (reader 'next)))
+        (case char
+          ((#\%) (let ((next-char (reader 'next)))
+                   (case next-char
+                     ((#\%) (do-backtrack backtrack "<%" #f))
+                     ((#\=)
+                      (set-action!
+                       (set-action! (esm-part (make-token)))
+                       *start-display-esm-part*)
+                      (get-previous-value previous-value))
+                     ((#\;)
+                      (set-action!
+                       (set-action! (comment-part (make-token)))
+                       *start-comment-part*)
+                      (get-previous-value previous-value))
+                     (else
+                      (set-action!
+                       (set-action!
+                        (let ((token (make-token)))
+                          (if (not (eof-object? next-char))
+                              (write-to-token next-char token))
+                          (esm-part token)))
+                       *start-esm-part*)
+                      (get-previous-value previous-value)))))
+          (else
+           (do-backtrack backtrack
+                         "<"
+                         (if (eof-object? char)
+                             #f
+                             (string char)))))))
 
-  (define (esm-part token)
-    (let ((char (read-char src-port)))
-      (case char
-        ((#\<) (start-esm-part (make-previous-value
-                                (error "bad esm: esm part is nested."))
+    (define (esm-part token)
+      (let ((char (reader 'next)))
+        (case char
+          ((#\<) (start-esm-part (make-previous-value token)
+                                 ;; don't report error
+                                 ;; (error "bad esm: esm part is nested.") 
+                                 (make-backtrack token esm-part)))
+          ((#\%) (end-esm-part (make-previous-value token)
                                (make-backtrack token esm-part)))
-        ((#\%) (end-esm-part (make-previous-value token)
-                             (make-backtrack token esm-part)))
-        ((#\newline)
-         (set-action! (esm-part (make-token)))
-         (write-to-token char token)
-         (return-token token))
-        (else (if (eof-object? char)
-                  (error "bad esm" (token->string token))
-                  (begin
-                    (write-to-token char token)
-                    (esm-part token)))))))
+          ((#\newline)
+           (set-action! (esm-part (make-token)))
+           (write-to-token char token)
+           (return-token token))
+          (else (if (eof-object? char)
+                    (error "bad esm: " (token->string token))
+                    (begin
+                      (write-to-token char token)
+                      (esm-part token)))))))
 
-  (define (comment-part token)
-    (let ((char (read-char src-port)))
-      (case char
-        ((#\%) (end-esm-part (make-previous-value token)
-                             (make-backtrack token comment-part)))
-        ((#\newline)
-         (set-action! (comment-part (make-token)))
-         (write-to-token char token)
-         (return-token token))
-        (else (if (eof-object? char)
-                  (error "bad esm" (token->string token))
-                  (begin
-                    (write-to-token char token)
-                    (comment-part token)))))))
+    (define (comment-part token)
+      (let ((char (reader 'next)))
+        (case char
+          ((#\%) (end-esm-part (make-previous-value token)
+                               (make-backtrack token comment-part)))
+          ((#\newline)
+           (set-action! (comment-part (make-token)))
+           (write-to-token char token)
+           (return-token token))
+          (else (if (eof-object? char)
+                    (error "bad esm: " (token->string token))
+                    (begin
+                      (write-to-token char token)
+                      (comment-part token)))))))
 
-  (define (end-esm-part previous-value backtrack)
-    (let ((char (read-char src-port)))
-      (case char
-        ((#\>)
-         (set-action!
-          (set-action! (text-part (make-token)))
-          "%>")
-         (get-previous-value previous-value))
-        ((#\%)
-         (let ((next-char (read-char src-port)))
-           (if (eof-object? next-char)
-               (backtrack "%>")
-               (backtrack (string-append "%" (string next-char))))))
-        (else
-         (if (eof-object? char)
-             (backtrack "%")
-             (backtrack (string-append "%" (string char))))))))
+    (define (end-esm-part previous-value backtrack)
+      (let ((char (reader 'next)))
+        (case char
+          ((#\>)
+           (set-action!
+            (set-action! (text-part (make-token)))
+            *end-esm-part*)
+           (get-previous-value previous-value))
+          ((#\%)
+           (let ((next-char (reader 'next)))
+             (cond ((eof-object? next-char)
+                    (do-backtrack backtrack "%%" #f))
+                   ((equal? next-char #\>)
+                    (do-backtrack backtrack "%>" #f))
+                   (else
+                    (do-backtrack backtrack
+                                  "%"
+                                  (string-append "%"
+                                                 (string next-char)))))))
+          (else
+           (do-backtrack backtrack
+                             "%"
+                             (if (eof-object? char)
+                                 #f
+                                 (string char)))))))
 
-  (init-action)
-  (set-action! (text-part (make-token))) ; first action
-  (lambda () (do-action)) ; return procedure which do next action
-  )
+    (init-action)
+    (set-action! (text-part (make-token))) ; first action
+    (lambda () (do-action)) ; return procedure which do next action
+    ))
 
 (define (include? key sequence predicate)
   (and (not (null? sequence))
@@ -148,12 +186,38 @@
     ((_ other . more)
      (syntax-error "bad clause in string-case" other))))
 
+(define-syntax token-case
+  (syntax-rules (else)
+    ((_ key) #f)
+    ((_ key (else expr ...)) (begin expr ...))
+    ((_ key ((token ...)) clause ...)
+     (syntax-error "expressions are not found in token-case" ((token ...))))
+    ((_ key ((token ...) expr ...) clause ...)
+     (let ((evaled-key key))
+       (if (include? evaled-key `(,token ...) eqv?)
+           (begin expr ...)
+           (token-case evaled-key clause ...))))
+    ((_ other . more)
+     (syntax-error "bad clause in token-case" other))))
+
 (define (esm-compile src)
   (let* ((src-port (if (string? src)
                        (open-input-string src)
                        src))
          (lexer (make-lexer src-port))
-         (result (make-result)))
+         (result (make-result))
+         (line 1))
+
+    (define (report-error message)
+      (if *esm-debug-mode*
+          (print (result->string result)))
+      (error (string-append "esm compile error at line "
+                            (number->string line)
+                            ": "
+                            message)))
+
+    (define (found-line)
+      (set! line (+ line 1)))
 
     (define (line? string)
       (eqv? #\newline
@@ -167,59 +231,79 @@
             (if (not first?) (write-to-result ") " result))
             (write-to-result (esm-get-output "_out") result)
             (write-to-result ")" result)
+            (if *esm-debug-mode*
+                (print (result->string result)))
             (result->string result))
-          (string-case token
-            (("<%")
+          (token-case token
+            ((*start-esm-part*)
              (if (not first?) (write-to-result ") " result))
              (esm-part (lexer)))
-            (("<%=")
+            ((*start-display-esm-part*)
              (if (not first?) (write-to-result ") " result))
              (display-esm-part (lexer)))
-            (("<%;")
+            ((*start-comment-part*)
              (if (not first?) (write-to-result ") " result))
              (comment-part (lexer)))
-            (("%>") (error "bad esm"))
+            ((*end-esm-part*)
+             (report-error "'%>' is appeared in text part."))
             (else
              (if first? (write-to-result " (begin " result))
              (esm-output-text token "_out" result)
-             (if (line? token) (write-to-result #\newline result))
+             (if (line? token)
+                 (begin
+                   (found-line)
+                   (write-to-result #\newline result)))
              (text-part (lexer) #f)))))
 
       (define (esm-part token)
         (if (eof-object? token)
-            (error "unexcepted end")
-            (string-case token
-              (("<%") (error "nested esm part"))
-              (("<%=") (error "nested esm part(display)"))
-              (("<%;") (error "nested esm part(comment)"))
-              (("%>") (text-part (lexer) #t))
+            (report-error "unexcepted end in esm part.")
+            (token-case token
+              ((*start-esm-part*)
+               (report-error "nested esm part found"))
+              ((*start-display-esm-part*)
+               (report-error "display esm part found in esm part."))
+              ((*start-comment-part*)
+               (report-error "comment part found in esm part."))
+              ((*end-esm-part*)
+               (text-part (lexer) #t))
               (else
                (write-to-result token result)
                (esm-part (lexer))))))
 
       (define (comment-part token)
         (if (eof-object? token)
-            (error "unexcepted end")
-            (string-case token
-              ;; (("<%") (error "nested esm part"))
-              ;; (("<%=") (error "nested esm part(display)"))
-              ;; (("<%;") (error "nested esm part(comment)"))
-              (("%>") (text-part (lexer) #t))
+            (report-error "unexcepted end found in comment part.")
+            (token-case token
+              ;; ((*start-esm-part*) (error "nested esm part"))
+              ;; ((*start-display-esm-part*) (error "nested esm part(display)"))
+              ;; ((*start-comment-part*) (error "nested esm part(comment)"))
+              ((*end-esm-part*) (text-part (lexer) #t))
               (else
-               (if (line? token) (write-to-result #\newline result))
+               (if (line? token)
+                   (begin
+                     (found-line)
+                     (write-to-result #\newline result)))
                (comment-part (lexer))))))
 
       (define (display-esm-part token)
         (if (eof-object? token)
             (error "unexcepted end")
-            (string-case token
-              (("<%") (error "nested esm part"))
-              (("<%=") (error "nested esm part(display)"))
-              (("<%;") (error "nested esm part(comment)"))
-              (("%>") (text-part (lexer) #t))
+            (token-case token
+              ((*start-esm-part*)
+               (report-error "esm part found in display esm part."))
+              ((*start-display-esm-part*)
+               (report-error "nested display esm part found."))
+              ((*start-comment-part*)
+               (report-error "comment part found in esm display part."))
+              ((*end-esm-part*)
+               (text-part (lexer) #t))
               (else
                (esm-output-scheme token "_out" result)
-               (if (line? token) (write-to-result #\newline result))
+               (if (line? token)
+                   (begin
+                     (found-line)
+                     (write-to-result #\newline result)))
                (esm-part (lexer))))))
 
       (write-to-result "(let ((_out " result)

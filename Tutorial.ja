@@ -170,9 +170,10 @@ define-esmを使うとesmで処理したテキストを返す手続きを定義す
 
   (use esm.gauche)
 
+  (define-esm parent "parent.esm" (current-module))
+  (define-esm child "child.esm" (current-module) arg)
+
   (define (main args)
-    (define-esm parent "parent.esm" (current-module))
-    (define-esm child "child.esm" (current-module) arg)
     (display (parent))
     0)
 
@@ -220,29 +221,28 @@ esmは以下の手続きを用意しています．
 
 --- esm-compile(src)
 
-  srcをコンパイルする．srcは文字列か入力ポート．
+    srcをコンパイルする．srcは文字列か入力ポート．
 
 --- esm-eval(compiled-esm . env)
 
-  コンパイルされたesmコードcompiled-esmを環境をenvとして評価
-  する．envが省略された場合は*esm-default-environment*が使用
-  される．
+    コンパイルされたesmコードcompiled-esmを環境をenvとして評
+    価する．envが省略された場合は*esm-default-environment* 
+    が使用される．
 
 --- esm-result(src . env)
 
-  srcをコンパイルして環境envで評価した結果の文字列を返す．
+    srcをコンパイルして環境envで評価した結果の文字列を返す．
 
 --- esm-run(src . env)
 
-  srcをコンパイルして環境envで評価した結果の文字列をdisplay
-  で出力する．
+    srcをコンパイルして環境envで評価した結果の文字列を
+    displayで出力する．
 
 --- define-esm(name filename env . args)
 
-  ファイル名filenameのesmコードをコンパイルし環境envで評価し
-  た結果をdisplayで出力するargsという引数を持つnameという名
-  前の手続きを定義する．
-
+    ファイル名filenameのesmコードをコンパイルし環境envで評価
+    した結果をdisplayで出力するargsという引数を持つnameとい
+    う名前の手続きを定義する．
 
 Gauche用のesmは他に<esm>クラス，resultメソッド，runメソッド，
 define-esm*構文を提供します．resultとesm-result，runと
