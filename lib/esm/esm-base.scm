@@ -183,6 +183,7 @@
                        src))
          (lexer (make-lexer src-port))
          (result (make-result))
+         (output-port-name "_out")
          (line 1))
 
     (define (report-error message)
@@ -206,7 +207,7 @@
       (if (eof-object? token)
           (begin
             (if (not first?) (write-to-result ") " result))
-            (write-to-result (esm-get-output "_out") result)
+            (write-to-result (esm-get-output output-port-name) result)
             (write-to-result ")" result)
             (if *esm-debug-mode*
                 (print (result->string result)))
@@ -225,7 +226,7 @@
              (report-error "'%>' is appeared in text part."))
             (else
              (if first? (write-to-result " (begin " result))
-             (esm-output-text token "_out" result)
+             (esm-output-text token output-port-name result)
              (if (line? token)
                  (begin
                    (found-line)
@@ -275,7 +276,7 @@
                (report-error "comment part found in esm display part."))
               ((*end-esm-part*)
                (if (not first?)
-                   (esm-output-end "_out" result))
+                   (esm-output-end output-port-name result))
                (text-part (lexer) #t))
               (else
                (if first?
@@ -286,9 +287,12 @@
                (display-esm-part (lexer)
                                  #f)))))
 
-      (write-to-result "(let ((_out " result)
+      (write-to-result (string-append "(let (("
+                                      output-port-name
+                                      " ")
+                       result)
       (write-to-result (esm-make-output) result)
-      (write-to-result ")) " result)
+      (write-to-result "))" result)
       (text-part (lexer) #t)))
 
 (define (esm-result src . env)
