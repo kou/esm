@@ -1,4 +1,4 @@
-(define *esm-version* "0.0.2")
+(define *esm-version* "0.0.4")
 
 (define *esm-debug-mode* #f)
 
